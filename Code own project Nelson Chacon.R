@@ -31,7 +31,16 @@ library (readr)
 #Load database from github repository (csv format)
 
 urlfile="https://raw.githubusercontent.com/nelchacon/My_project_edx/main/hs_2018.csv"
-
 mydata<-read_csv(url(urlfile))
+View(mydata)
+
+# Wrangling
+
+summary(mydata)
+
+# Pre-processing
+
+#Running Model 1: CART
 
 
+#Running Model 2: Random Forest
