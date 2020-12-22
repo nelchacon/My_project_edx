@@ -230,19 +230,53 @@ pre.process <- preProcess(train.dummy, method ="bagImpute")
 imputed.data <- predict(pre.process, train.dummy)
 View(imputed.data)
 
+#lets put in order the imputed data before replacing in last database
 
+imputed.data <- as.data.frame(imputed.data)
+missimputed <- select(imputed.data, 22:24, 27, 34:35)
+View(missimputed)
 
+# recomputing the predicted missing values before including in data base
 
+missimputed$new_educ <- round(missimputed$educ,0)
+summary(missimputed$new_educ)
 
+missimputed$new_poverty <- ifelse(missimputed$poverty.notpoor>0.5, "notpoor", "poor")
 
+missimputed$new_firmsize <- ifelse(missimputed$firm_size.large>0.5, "large", ifelse(missimputed$firm_size.medium>0.5, "medium", "small"))
 
 
 #Creating the final database for our models
 
+#adding the new imputed variables to the database with no outliers
+
+eap.data.no <- mutate(eap.data.no, new_edcu=missimputed$new_educ, new_poverty = missimputed$new_poverty, new_firmsize=missimputed$new_firmsize)
+View(eap.data.no)
+
+#we exclude all the variables that wont be used in our model
+
+finalbase <- eap.data.no[-c(6 ,9, 13, 15, 20:22)]
+View(finalbase)
+
 #Split data into training and testing sets
 
+#The idea is to have representative subsamples of the interest variable Formality both
+#on training and testing sets
 
+prop.table(table(finalbase$formality)) #We have 79% of informal workers on the final database
 
+#Lets round it to 80% of informal and 20% of formal workers on the new splits
+
+set.seed(1983)
+test_index <- createDataPartition(finalbase$formality, times = 1, p = 0.2, list = FALSE)
+
+test_set <- finalbase[test_index, ]
+train_set <- finalbase[-test_index, ]
+
+#checking that training and testing sets maintain the balance of 80% of informal workers
+
+prop.table(table(train_set$formality))  #they are ok, around 80% informality
+prop.table(table(test_set$formality))  #ok too, near 80% of informality
 
 #Running Model 1: CART
 
