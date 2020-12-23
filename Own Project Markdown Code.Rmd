@@ -47,4 +47,12 @@ This section presents the modeling results and discusses the model performance.
 
 Brief summary of the report, its potential impact, its limitations, and future work.
 
+-   5 points for 3 files
+
+-   25 points a good report
+
+-   20 points good R code script
+
+-   try to send it January 3rd
+
 ## References

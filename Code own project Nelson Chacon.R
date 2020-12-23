@@ -282,18 +282,27 @@ prop.table(table(test_set$formality))  #ok too, near 80% of informality
 
 #Running Model 1: CART
 
-cartmodel1 <- rpart(formality ~ .,
-                data = train_set,
+train_set$formality <- as.factor(train_set$formality) # define dependent variable as factor instead of number
+test_set$formality <- as.factor(test_set$formality) # define dependent variable as factor instead of number
+
+
+#prueba borrando variables irrelevantes
+train_set_caca <- train_set[-c(11 ,12, 15)]
+test_set_caca <- test_set[-c(11 ,12, 15)]
+
+View(train_set_caca)
+
+cartmodel1 <- rpart(formality ~ ., method = "class",
+                data = train_set_caca,
                 control = rpart.control(cp = 0, minsplit = 2))
 
 #predict
-formal_hat1 <- predict(cartmodel1, test_set)
+formal_hat1 <- predict(cartmodel1, test_set_caca)
 
 #confusion matrix
 formal_hat1 <- factor(formal_hat1)
-confusionMatrix(formal_hat1, factor(test_set$formality))
+confusionMatrix(formal_hat1, factor(test_set_caca$formality))
 
-confusionMatrix(predict(cartmodel1, levels(test_set)), levels(test_set$formality))$overall["Accuracy"]
 
 # tree graph
 
