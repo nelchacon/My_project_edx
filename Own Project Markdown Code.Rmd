@@ -1,16 +1,23 @@
 ---
 title: "Predicting Labor Informality"
 author: "Nelson Chacon Rendon"
-date: "12/16/2020"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
 toc: true
+bibliography: ["references.bib"]
+biblio-style: "apalike"
+link-citations: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Introduction
+
+Describes the dataset and variables, summarizes the goal of the project and key steps performed.
+
+References like this [@RePEc:grm:ecoyun:201907].
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
@@ -20,7 +27,9 @@ When you click the **Knit** button a document will be generated that includes bo
 summary(cars)
 ```
 
-## Including Plots
+## Analysis
+
+Explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than simple linear regression for prediction problems.
 
 You can also embed plots, for example:
 
@@ -30,6 +39,12 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-## Introduction
+## Results
 
-Here my intro
+This section presents the modeling results and discusses the model performance.
+
+## Conclusion
+
+Brief summary of the report, its potential impact, its limitations, and future work.
+
+## References

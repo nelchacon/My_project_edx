@@ -13,6 +13,7 @@ if(!require(gt)) install.packages("gt", repos = "http://cran.us.r-project.org")
 #if(!require(scales)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
 if(!require(repmis)) install.packages("repmis", repos = "http://cran.us.r-project.org")
 if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
+if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
 
 
 #Load libraries we will use
@@ -26,6 +27,7 @@ library(foreign)
 #library(scales)
 library(repmis)
 library (readr)
+library(rpart)
 
 
 #Load database from github repository (csv format)
@@ -280,10 +282,22 @@ prop.table(table(test_set$formality))  #ok too, near 80% of informality
 
 #Running Model 1: CART
 
-model1 <- train(formal_ci ~ .,
-                method = "rpart",
-                tuneGrid = data.frame(cp= seq(0, 0.05, len = 25)),
-                data = mydata)
+cartmodel1 <- rpart(formality ~ .,
+                data = train_set,
+                control = rpart.control(cp = 0, minsplit = 2))
+
+#predict
+formal_hat1 <- predict(cartmodel1, test_set)
+
+#confusion matrix
+formal_hat1 <- factor(formal_hat1)
+confusionMatrix(formal_hat1, factor(test_set$formality))
+
+confusionMatrix(predict(cartmodel1, levels(test_set)), levels(test_set$formality))$overall["Accuracy"]
+
+# tree graph
+
+prp(cartmodel1, type = 2, extra = "auto" , nn = TRUE, fallen.leaves = TRUE, faclen = 4, varlen = 8, shadow.col = "gray")
 
 
 #Running Model 2: Random Forest
