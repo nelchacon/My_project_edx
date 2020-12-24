@@ -3,7 +3,7 @@
 ##############################
 
 #Install required packages
-if(!require(foreign)) install.packages("foreign", repos = "http://cran.us.r-project.org")
+#if(!require(foreign)) install.packages("foreign", repos = "http://cran.us.r-project.org")
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 #if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
@@ -75,20 +75,13 @@ table6 <- table(mydata$firm_size, mydata$formality)
 table6
 prop.table(table6,1)
 
-
 # Percentage of informal workers by labor market
-table7 <- table(mydata$labor_market, mydata$formality)
+table7 <- table(mydata$poverty, mydata$formality)
 table7
 prop.table(table7,1)
 
-# Percentage of informal workers by labor market
-table8 <- table(mydata$poverty, mydata$formality)
-table8
-prop.table(table8,1)
-
 #average income for formal and informal workers
 mydata %>% group_by(formality) %>% summarize(Avg = mean(work_income, na.rm=T))
-
 
 #average working hours for formal and informal workers
 mydata %>% group_by(formality) %>% summarize(Avg = mean(work_hours, na.rm=T))
@@ -98,64 +91,38 @@ mydata %>% group_by(formality) %>% summarize(Avg = mean(job_tenure, na.rm=T))
 
 #Graphics
 
-# Labor Informality by gender
-inf_gender <- data.frame(Gender=c("Men", "Women"),
-                 len=c(0.791,0.822))
-head(inf_gender)
+characteristics <- c("rural","indigenous","self-employed","unpaid","agriculture","construction","trade","transportation","small firm","poor")
+values <- c(92,87,96,99,98,91,92,91,95,95)
+graph1 <- data.frame(characteristics, values)
 
-p<-ggplot(data=inf_gender, aes(x=Gender, y=len)) +
-  geom_bar(stat="identity")
-p
+#Plot 1: informality labour according to different economic characteristics (factors)
 
-# Basic barplot
-plot1 <- ggplot(data=mydata, aes(x=sexo_ci, y=formal_ci)) +
-  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
-  geom_bar(stat="identity")
-plot1
+  ggplot(data=graph1, aes(x=reorder(characteristics, values), y= values)) +
+  geom_bar(position = "dodge", stat="identity")+
+  geom_text(aes(label=values), position=position_dodge(width=0.9), vjust=-0.25, hjust = -0.2)+
+  coord_flip()+ scale_y_continuous(name="Labor informality (%)")+
+  scale_x_discrete(name="Worker characteristics") +
+  theme_minimal()
 
-# Horizontal bar plot
-plot1 + coord_flip()
+#Plot 2: informality labor according to numeric characteristics
 
+  characteristics2 <- c(rep("labor income" , 2) , rep("hours per week" , 2) , rep("length of service" , 2))
+  categories2 <- c("formal","informal","formal","informal","formal","informal")
+  values2 <- c(638,305,41.9,43.3,8.2,9.3)
+  graph2 <- data.frame(characteristics2,categories2,values2)
 
-#test
+  
+  ggplot(data=graph2, aes(x=categories2, y= values2)) +
+    geom_bar(position = "dodge", stat="identity")+
+    geom_text(aes(label=values2), position=position_dodge(width=0.9), vjust=-0.5)+
+    scale_y_continuous(name="Hours, dollars and years")+
+    scale_x_discrete(name="Labor category") +
+    facet_wrap(~characteristics2, scales = "free_y") +
+    theme_minimal()
 
-ggplot(mydata, aes(x= formal_ci,  group=sexo_ci)) + 
-  geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
-  geom_text(aes( label = scales::percent(..prop..),
-                 y= ..prop.. ), stat= "count", vjust = -.5) +
-  labs(y = "Percent", fill="gender") +
-  facet_grid(~formal_ci) +
-  scale_y_continuous(labels = scales::percent)
-
-
-
-
-
-
-library(ggplot2)
-library(scales)
-
-ggplot(mydata, aes(x=sexo_ci, group=formal_ci)) +
-  geom_bar(aes(y=..prop.., fill = factor(..x..)), stat="count") +
-  scale_y_continuous(labels=percent_format())
-
-#generating data for graphs
-
-variable <- c(rep("gender" , 2) , rep("zone" , 2) , rep("race" , 2) , rep("firm size" , 3), rep("poverty" , 2), rep("labor market" , 6), rep("labor category" , 5) )
-categories <- c("men" , "women" , "urban", "rural" , "indigenous", "not indigenous", "small", "medium", "large", "poor", "not poor", "doemstic", "government", "family", "pseudo business", "business", "unpaid", "other", "boss", "self-employed", "employee", "unpaid")
-value <- abs(rnorm(22 , 0 , 15))
-data <- data.frame(variable,categories,value)
-
-
-#graphs for categorical variables
-ggplot(data, aes(fill=categories, y=value, x=categories)) + 
-  geom_bar(position="dodge", stat="identity") +
-  ggtitle("Studying 4 species..") +
-  facet_wrap(~variable) +
-  theme(legend.position="none") +
-  xlab("")
-
+########################################
 # Pre-processing
+########################################  
 
 #Working only with economically active population (EAP)
 
