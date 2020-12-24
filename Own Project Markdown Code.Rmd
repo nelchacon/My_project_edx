@@ -54,6 +54,14 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
+describing data
+
+![Percentage of informal workers according to different criteria](Plots/Rplot1.png "Percentage of informal workers according to different criteria")
+
+Plot 2
+
+![Wage differences, seniority and hours worked between formal and informal workers](Plots/Rplot2.png "Wage differences, seniority and hours worked between formal and informal workers")
+
 Imputing missing data
 
 Sometimes we have some problems with missing values in real-life datasets. Sometimes missing values is a real problem for research. How to recover missing values in our datasets? In this post we will consider one very interesting method of recovering missing values. It is method a bagging of regression trees. It provides the recovery of missing values for several variables at once, based on regression dependencies.
