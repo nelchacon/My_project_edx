@@ -3,7 +3,7 @@
 ##############################
 
 #Install required packages
-if(!require(foreign)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(foreign)) install.packages("foreign", repos = "http://cran.us.r-project.org")
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 #if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
@@ -14,6 +14,7 @@ if(!require(gt)) install.packages("gt", repos = "http://cran.us.r-project.org")
 if(!require(repmis)) install.packages("repmis", repos = "http://cran.us.r-project.org")
 if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
 if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
+if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
 
 
 #Load libraries we will use
@@ -28,6 +29,7 @@ library(foreign)
 library(repmis)
 library (readr)
 library(rpart)
+library(Rborist)
 
 
 #Load database from github repository (csv format)
@@ -160,7 +162,7 @@ ggplot(data, aes(fill=categories, y=value, x=categories)) +
 table(mydata$eapop) #We have 17659 EAP in our sample
 
 eap.data <- filter(mydata, eapop==1)
-View(eap.data)
+#View(eap.data)
 
 #Cleaning outliers
 
@@ -192,6 +194,7 @@ View(eap.data.no) #we deleted 2878 extreme observations from our data base
 
 #first lets define all non numeric variables as factors
 str(eap.data.no)
+#eap.data.no$formality <- as.factor(eap.data.no$formality)
 eap.data.no$zone <- as.factor(eap.data.no$zone)
 eap.data.no$gender <- as.factor(eap.data.no$gender)
 eap.data.no$indigenous <- as.factor(eap.data.no$indigenous)
@@ -217,26 +220,26 @@ eap.data.no$missPov <- ifelse(is.na(eap.data.no$poverty), "Y", "N")
 #we erase the variables that not help for the imputation
 
 forimputation <- select(eap.data.no, -6, -10, -20:-22)
-View(forimputation)
+#View(forimputation)
 str(forimputation)
 
 #transforming all variables to dummies
 
 dummy.vars <- dummyVars(~., data=forimputation)
 train.dummy <- predict(dummy.vars, forimputation)
-View(train.dummy)
+#View(train.dummy)
 
 #now impute
 
 pre.process <- preProcess(train.dummy, method ="bagImpute")
 imputed.data <- predict(pre.process, train.dummy)
-View(imputed.data)
+#View(imputed.data)
 
 #lets put in order the imputed data before replacing in last database
 
 imputed.data <- as.data.frame(imputed.data)
 missimputed <- select(imputed.data, 22:24, 27, 34:35)
-View(missimputed)
+#View(missimputed)
 
 # recomputing the predicted missing values before including in data base
 
@@ -253,12 +256,12 @@ missimputed$new_firmsize <- ifelse(missimputed$firm_size.large>0.5, "large", ife
 #adding the new imputed variables to the database with no outliers
 
 eap.data.no <- mutate(eap.data.no, new_edcu=missimputed$new_educ, new_poverty = missimputed$new_poverty, new_firmsize=missimputed$new_firmsize)
-View(eap.data.no)
+#View(eap.data.no)
 
 #we exclude all the variables that wont be used in our model
 
 finalbase <- eap.data.no[-c(6 ,9, 13, 15, 20:22)]
-View(finalbase)
+#View(finalbase)
 
 #Split data into training and testing sets
 
@@ -282,8 +285,8 @@ prop.table(table(test_set$formality))  #ok too, near 80% of informality
 
 #Running Model 1: CART
 
-train_set$formality <- as.factor(train_set$formality) # define dependent variable as factor instead of number
-test_set$formality <- as.factor(test_set$formality) # define dependent variable as factor instead of number
+#train_set$formality <- as.factor(train_set$formality) # define dependent variable as factor instead of number
+#test_set$formality <- as.factor(test_set$formality) # define dependent variable as factor instead of number
 
 
 #prueba borrando variables irrelevantes
@@ -292,16 +295,18 @@ test_set_caca <- test_set[-c(11 ,12, 15)]
 
 View(train_set_caca)
 
-cartmodel1 <- rpart(formality ~ ., method = "class",
-                data = train_set_caca,
+cartmodel1 <- rpart(formality ~ ., 
+                data = train_set,
                 control = rpart.control(cp = 0, minsplit = 2))
 
 #predict
-formal_hat1 <- predict(cartmodel1, test_set_caca)
+formal_hat1 <- predict(cartmodel1, test_set)
 
 #confusion matrix
 formal_hat1 <- factor(formal_hat1)
-confusionMatrix(formal_hat1, factor(test_set_caca$formality))
+
+confusionMatrix(data = formal_hat1, reference=factor(test_set$formality))
+
 
 
 # tree graph
@@ -310,3 +315,107 @@ prp(cartmodel1, type = 2, extra = "auto" , nn = TRUE, fallen.leaves = TRUE, facl
 
 
 #Running Model 2: Random Forest
+
+
+
+
+
+
+
+####PUTAZO EL QUE LEE
+
+
+#nueva data sin las variables irrelevantes
+
+
+newdata <- finalbase <- eap.data.no[-c(6 ,9, 13, 14, 16, 15, 19:22)]
+
+#nuevo partition
+
+set.seed(1983)
+test_index_new <- createDataPartition(newdata$formality, times = 1, p = 0.2, list = FALSE)
+
+test_set_new <- newdata[test_index, ]
+train_set_new <- newdata[-test_index, ]
+
+cartmodel1new <- rpart(formality ~ ., method = "class",
+                    data = train_set_new,
+                    control = rpart.control(cp = 0, minsplit = 2))
+
+#predict
+formal_hat1new <- predict(cartmodel1new, test_set_new, type = "class")
+
+#confusion matrix
+formal_hat1new <- factor(formal_hat1new)
+
+confusionMatrix(data = formal_hat1new, reference=factor(test_set_new$formality))
+
+
+#Random Forest
+
+x <- train_set_new[-c(8)]
+y <- train_set_new[c(8)]
+y_pred <- test_set_new[c(8)]
+
+control <- trainControl(method = "cv", number = 10, p = 0.8)
+grid <- expand.grid(minNode = c(1), predFixed = c(5, 10, 15))
+
+
+train_rf <- train(x[,14],
+                  y = y$formality,
+                  method = "Rborist",
+                    nTree = 50,
+                    trControl = control,
+                    tuneGrid = grid,
+                    nSamp = 2000)
+
+library(randomForest)
+train_set_new$formality <- as.factor(train_set_new$formality)
+test_set_new$formality <- as.factor(test_set_new$formality)
+
+
+#control and grid
+rfcontrol <- trainControl(method="cv", number = 10)
+rfgrid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
+
+
+rf <- randomForest(formality ~ .,
+                   data = train_set_new,
+                   trControl = rfcontrol,
+                   tuneGrid = rfgrid,
+                   ntree = 150,
+                   nSamp = 2000)
+
+#predict
+rf_predict <- predict(rf, test_set_new, type = "class")
+
+#confusion matrix
+rf_predict <- factor(rf_predict)
+
+confusionMatrix(data = rf_predict, reference=factor(test_set_new$formality))
+
+plot(rf)
+
+imp <- importance(rf)
+imp
+
+# best parameters for tuning
+ggplot(rf)
+rf$mtry
+
+
+#Best model tuned
+
+rf_best <- randomForest(formality ~ .,
+                   data = train_set_new,
+                   trControl = rfcontrol,
+                   ntree = 100,
+                   minNode = rf$mtry)
+
+#predict
+rf_predict_best <- predict(rf_best, test_set_new, type = "class")
+
+#confusion matrix
+rf_predict_best <- factor(rf_predict_best)
+
+confusionMatrix(data = rf_predict_best, reference=factor(test_set_new$formality))
