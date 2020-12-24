@@ -310,8 +310,8 @@ confusionMatrix(data = formal_hat1, reference=factor(test_set$formality))
 
 
 # tree graph
-
-prp(cartmodel1, type = 2, extra = "auto" , nn = TRUE, fallen.leaves = TRUE, faclen = 4, varlen = 8, shadow.col = "gray")
+library(rpart.plot)
+prp(cartmodel1, type = 2, extra = "auto" , nn = F, fallen.leaves = TRUE, faclen = 4, varlen = 8, shadow.col = "gray")
 
 
 #Running Model 2: Random Forest
@@ -399,6 +399,8 @@ plot(rf)
 imp <- importance(rf)
 imp
 
+varImpPlot(rf)
+
 # best parameters for tuning
 ggplot(rf)
 rf$mtry
@@ -412,6 +414,7 @@ rf_best <- randomForest(formality ~ .,
                    ntree = 100,
                    minNode = rf$mtry)
 
+rf_best
 #predict
 rf_predict_best <- predict(rf_best, test_set_new, type = "class")
 
@@ -419,3 +422,4 @@ rf_predict_best <- predict(rf_best, test_set_new, type = "class")
 rf_predict_best <- factor(rf_predict_best)
 
 confusionMatrix(data = rf_predict_best, reference=factor(test_set_new$formality))
+importance(rf_best)
