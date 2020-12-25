@@ -15,6 +15,7 @@ if(!require(repmis)) install.packages("repmis", repos = "http://cran.us.r-projec
 if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
 if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
 if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
+if(!require(randomForest)) install.packages("randomForest", repos = "http://cran.us.r-project.org")
 
 
 #Load libraries we will use
@@ -30,6 +31,7 @@ library(repmis)
 library (readr)
 library(rpart)
 library(Rborist)
+library(randomForest)
 
 
 #Load database from github repository (csv format)
@@ -154,25 +156,21 @@ max_senior  #the maximum labor seniority for avoiding outliers is 28 years
 
 #Lets clean the data from these extreme values
 
-eap.data.no <- filter(eap.data, age <= 83, work_hours <= 90, work_income <=7750, job_tenure <=28)
+eap.data.no <- filter(eap.data, age <= max_age, work_hours <= max_hours, work_income <= max_income, job_tenure <= max_senior)
 View(eap.data.no) #we deleted 2878 extreme observations from our data base
 
 #Imputing missing values
 
 #first lets define all non numeric variables as factors
 str(eap.data.no)
-#eap.data.no$formality <- as.factor(eap.data.no$formality)
+eap.data.no$formality <- as.factor(eap.data.no$formality)
 eap.data.no$zone <- as.factor(eap.data.no$zone)
 eap.data.no$gender <- as.factor(eap.data.no$gender)
 eap.data.no$indigenous <- as.factor(eap.data.no$indigenous)
 eap.data.no$labcat <- as.factor(eap.data.no$labcat)
 eap.data.no$labbranch <- as.factor(eap.data.no$labbranch)
 eap.data.no$firm_size <- as.factor(eap.data.no$firm_size)
-eap.data.no$labor_market <- as.factor(eap.data.no$labor_market)
 eap.data.no$poverty <- as.factor(eap.data.no$poverty)
-eap.data.no$number_jobs <- as.factor(eap.data.no$number_jobs)
-eap.data.no$house_prop <- as.factor(eap.data.no$house_prop)
-eap.data.no$health_insure <- as.factor(eap.data.no$health_insure)
 
 str(eap.data.no)  #now the variables are numeric or factors
 
@@ -184,9 +182,10 @@ eap.data.no$missFirm <- ifelse(is.na(eap.data.no$firm_size), "Y", "N") #want to 
 eap.data.no$misseduc <- ifelse(is.na(eap.data.no$educ), "Y", "N") 
 eap.data.no$missPov <- ifelse(is.na(eap.data.no$poverty), "Y", "N") 
 
-#we erase the variables that not help for the imputation
+#we delete the variables that do not help for the imputation (economic active population indicator
+#, dependent variable of formality, and missing value indicators)
 
-forimputation <- select(eap.data.no, -6, -10, -20:-22)
+forimputation <- select(eap.data.no, -6, -10, -16:-18)
 #View(forimputation)
 str(forimputation)
 
@@ -202,10 +201,10 @@ pre.process <- preProcess(train.dummy, method ="bagImpute")
 imputed.data <- predict(pre.process, train.dummy)
 #View(imputed.data)
 
-#lets put in order the imputed data before replacing in last database
+#lets put in order the imputed data before replacing in the last database
 
 imputed.data <- as.data.frame(imputed.data)
-missimputed <- select(imputed.data, 22:24, 27, 34:35)
+missimputed <- select(imputed.data, 22:24, 27:29)
 #View(missimputed)
 
 # recomputing the predicted missing values before including in data base
@@ -218,7 +217,7 @@ missimputed$new_poverty <- ifelse(missimputed$poverty.notpoor>0.5, "notpoor", "p
 missimputed$new_firmsize <- ifelse(missimputed$firm_size.large>0.5, "large", ifelse(missimputed$firm_size.medium>0.5, "medium", "small"))
 
 
-#Creating the final database for our models
+#Creating the final database for using in our models
 
 #adding the new imputed variables to the database with no outliers
 
@@ -226,8 +225,9 @@ eap.data.no <- mutate(eap.data.no, new_edcu=missimputed$new_educ, new_poverty = 
 #View(eap.data.no)
 
 #we exclude all the variables that wont be used in our model
+#the economically active indicator, incomplete education, firm size and poverty, and missing values indicators)
 
-finalbase <- eap.data.no[-c(6 ,9, 13, 15, 20:22)]
+finalbase <- eap.data.no[-c(6 ,9, 13, 14, 16:18)]
 #View(finalbase)
 
 #Split data into training and testing sets
@@ -250,29 +250,25 @@ train_set <- finalbase[-test_index, ]
 prop.table(table(train_set$formality))  #they are ok, around 80% informality
 prop.table(table(test_set$formality))  #ok too, near 80% of informality
 
-#Running Model 1: CART
+###############################
+###MODELING LABOR INFORMALITY
+###############################
 
-#train_set$formality <- as.factor(train_set$formality) # define dependent variable as factor instead of number
-#test_set$formality <- as.factor(test_set$formality) # define dependent variable as factor instead of number
+# 1. FISRT MODEL: NAIVE LOGISTIC REGRESSION
+
+glm_model <-  glm(formality ~ ., data= train_set, family = "binomial") #model
+
+hat_logit <- predict(glm_model, newdata = test_set, type = "response") #prediction
+
+hat_logit <- ifelse(hat_logit > 0.5, "1", "0") %>% factor # rounding the predictions for comparison
+confusionMatrix(hat_logit, test_set$formality)  # accuracy
+
+# 2. SECOND MODEL: CLASSIFICATION TREE
 
 
-#prueba borrando variables irrelevantes
-train_set_caca <- train_set[-c(11 ,12, 15)]
-test_set_caca <- test_set[-c(11 ,12, 15)]
 
-View(train_set_caca)
 
-cartmodel1 <- rpart(formality ~ ., 
-                data = train_set,
-                control = rpart.control(cp = 0, minsplit = 2))
 
-#predict
-formal_hat1 <- predict(cartmodel1, test_set)
-
-#confusion matrix
-formal_hat1 <- factor(formal_hat1)
-
-confusionMatrix(data = formal_hat1, reference=factor(test_set$formality))
 
 
 
@@ -283,63 +279,69 @@ prp(cartmodel1, type = 2, extra = "auto" , nn = F, fallen.leaves = TRUE, faclen 
 
 #Running Model 2: Random Forest
 
+#Define control and grid for optimization and tuning parameters 
+control <- trainControl(method="cv", number = 10)
+grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 
-
-
-
-
-
-####PUTAZO EL QUE LEE
-
-
-#nueva data sin las variables irrelevantes
-
-
-newdata <- finalbase <- eap.data.no[-c(6 ,9, 13, 14, 16, 15, 19:22)]
-
-#nuevo partition
-
-set.seed(1983)
-test_index_new <- createDataPartition(newdata$formality, times = 1, p = 0.2, list = FALSE)
-
-test_set_new <- newdata[test_index, ]
-train_set_new <- newdata[-test_index, ]
-
-cartmodel1new <- rpart(formality ~ ., method = "class",
-                    data = train_set_new,
-                    control = rpart.control(cp = 0, minsplit = 2))
+train_rpart <- train(formality ~ .,
+                     method = "rpart",
+                     tuneGrid = data.frame(cp = seq(0.0, 0.1, len = 25)),
+                     data = train_set)
+plot(train_rpart)
 
 #predict
-formal_hat1new <- predict(cartmodel1new, test_set_new, type = "class")
+rpart_hat <- predict(train_rpart, test_set)
+
+#Confusion matrix
+confusionMatrix(rpart_hat, test_set$formality)$overall["Accuracy"]
+
+#Best tuned model
+
+best_rpart <- train(formality ~ .,
+                     method = "rpart",
+                     cp=0.004166667,
+                     data = train_set)
+
+rpart_hat_best <- predict(best_rpart, test_set)
+
+confusionMatrix(rpart_hat_best, test_set$formality)$overall["Accuracy"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cartmodel <- rpart(formality ~ .,
+                       data = train_set,
+                      control = rpart.control(cp = 0, minsplit = 2))
+
+
 
 #confusion matrix
+
+formal_hat1new <- predict(cartmodel, test_set, type="class")
+
 formal_hat1new <- factor(formal_hat1new)
 
-confusionMatrix(data = formal_hat1new, reference=factor(test_set_new$formality))
+confusionMatrix(data = formal_hat1new, reference=test_set$formality)
 
 
-#Random Forest
-
-x <- train_set_new[-c(8)]
-y <- train_set_new[c(8)]
-y_pred <- test_set_new[c(8)]
-
-control <- trainControl(method = "cv", number = 10, p = 0.8)
-grid <- expand.grid(minNode = c(1), predFixed = c(5, 10, 15))
 
 
-train_rf <- train(x[,14],
-                  y = y$formality,
-                  method = "Rborist",
-                    nTree = 50,
-                    trControl = control,
-                    tuneGrid = grid,
-                    nSamp = 2000)
 
-library(randomForest)
-train_set_new$formality <- as.factor(train_set_new$formality)
-test_set_new$formality <- as.factor(test_set_new$formality)
 
+# 3. LAST MODEL: RANDOM FOREST
 
 #control and grid
 rfcontrol <- trainControl(method="cv", number = 10)
@@ -347,19 +349,19 @@ rfgrid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 
 
 rf <- randomForest(formality ~ .,
-                   data = train_set_new,
+                   data = train_set,
                    trControl = rfcontrol,
                    tuneGrid = rfgrid,
                    ntree = 150,
                    nSamp = 2000)
 
 #predict
-rf_predict <- predict(rf, test_set_new, type = "class")
+rf_predict <- predict(rf, test_set, type = "class")
 
 #confusion matrix
 rf_predict <- factor(rf_predict)
 
-confusionMatrix(data = rf_predict, reference=factor(test_set_new$formality))
+confusionMatrix(data = rf_predict, reference=factor(test_set$formality))
 
 plot(rf)
 
@@ -369,24 +371,26 @@ imp
 varImpPlot(rf)
 
 # best parameters for tuning
-ggplot(rf)
+
 rf$mtry
+
+
 
 
 #Best model tuned
 
 rf_best <- randomForest(formality ~ .,
-                   data = train_set_new,
-                   trControl = rfcontrol,
-                   ntree = 100,
-                   minNode = rf$mtry)
+                        data = train_set,
+                        trControl = rfcontrol,
+                        ntree = 100,
+                        minNode = rf$mtry)
 
 rf_best
 #predict
-rf_predict_best <- predict(rf_best, test_set_new, type = "class")
+rf_predict_best <- predict(rf_best, test_set, type = "class")
 
 #confusion matrix
 rf_predict_best <- factor(rf_predict_best)
 
-confusionMatrix(data = rf_predict_best, reference=factor(test_set_new$formality))
+confusionMatrix(data = rf_predict_best, reference=factor(test_set$formality))
 importance(rf_best)
