@@ -286,6 +286,7 @@ grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 train_rpart <- train(formality ~ .,
                      method = "rpart",
                      tuneGrid = data.frame(cp = seq(0.0, 0.1, len = 25)),
+                     trControl = trainControl("cv", number = 10),
                      data = train_set)
 plot(train_rpart)
 
@@ -295,11 +296,17 @@ rpart_hat <- predict(train_rpart, test_set)
 #Confusion matrix
 confusionMatrix(rpart_hat, test_set$formality)$overall["Accuracy"]
 
+# Model tree plot
+plot(train_rpart$finalModel, margin = 0.1)
+text(train_rpart$finalModel, digits = 3, cex = 1)
+
+
 #Best tuned model
 
 best_rpart <- train(formality ~ .,
                      method = "rpart",
-                     cp=0.004166667,
+                     cp=train_rpart$bestTune$cp,
+                     trControl = trainControl("cv", number = 10),
                      data = train_set)
 
 rpart_hat_best <- predict(best_rpart, test_set)
@@ -307,7 +314,8 @@ rpart_hat_best <- predict(best_rpart, test_set)
 confusionMatrix(rpart_hat_best, test_set$formality)$overall["Accuracy"]
 
 
-
+plot(best_rpart, margin = 0.1)
+text(best_rpart, cex = 0.25)
 
 
 

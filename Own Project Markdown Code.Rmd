@@ -76,6 +76,10 @@ The partitioning of the database into the training and testing sub-samples is do
 
 This section presents the modeling results and discusses the model performance.
 
+Classification tree for informality labor
+
+![Classification tree for labor informality](Plots/tree.PNG "Classification tree for labor informality")
+
 ## Conclusion
 
 Brief summary of the report, its potential impact, its limitations, and future work.
