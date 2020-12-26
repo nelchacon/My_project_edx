@@ -270,20 +270,6 @@ summary(glm_model)  # see the results of the model
 
 # 2. SECOND MODEL: CLASSIFICATION TREE
 
-
-
-
-
-
-
-
-# tree graph
-library(rpart.plot)
-prp(cartmodel1, type = 2, extra = "auto" , nn = F, fallen.leaves = TRUE, faclen = 4, varlen = 8, shadow.col = "gray")
-
-
-#Running Model 2: Random Forest
-
 #Define control and grid for optimization and tuning parameters 
 control <- trainControl(method="cv", number = 10)
 grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))

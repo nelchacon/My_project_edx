@@ -13,7 +13,7 @@ link-citations: true
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-````{r datasets, include=FALSE}
+```{r datasets, include=FALSE}
 
 #load datasets
 
@@ -21,7 +21,7 @@ test_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final pr
 
 train_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final project edx/My_project_edx/train_set.Rds")
 
-````
+```
 
 # Introduction
 
@@ -127,9 +127,9 @@ Logistic regression results
 glm_model <-  glm(formality ~ ., data= train_set, family = "binomial") #model
 ```
 
-````{r logistic results}
+```{r logistic results}
 summary(glm_model)
-````
+```
 
 Classification tree for informality labor
 
@@ -142,6 +142,17 @@ According to the results of our first random forest model, we tune our tree numb
 The variables importance according to our random forest model is:
 
 ![Importance of variables according to random forest methodology](Plots/Rplot Importance.png "Importance of variables according to random forest methodology")
+
+Table of model results (accuracy)
+
+| Model               | Accuracy | Notes              |
+|---------------------|----------|--------------------|
+| Logistic regression | 0.9112   | control cv         |
+| Classification tree | 0.8942   | control cv         |
+| Random Forest       | 0.9180   | control cv         |
+| Random Forest tuned | 0.9475   | control cv 10 fold |
+
+: Accuracy for each model of labor informality
 
 # Conclusion
 
