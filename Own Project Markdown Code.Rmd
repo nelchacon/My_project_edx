@@ -13,7 +13,17 @@ link-citations: true
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Introduction
+````{r datasets, include=FALSE}
+
+#load datasets
+
+test_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final project edx/My_project_edx/test_set.Rds")
+
+train_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final project edx/My_project_edx/train_set.Rds")
+
+````
+
+# Introduction
 
 Describes the dataset and variables, summarizes the goal of the project and key steps performed.
 
@@ -26,6 +36,8 @@ When you click the **Knit** button a document will be generated that includes bo
 ```{r cars}
 summary(cars)
 ```
+
+## About labor informality
 
 International Labor Organization (ILO) states that....
 
@@ -42,9 +54,40 @@ the term "informal economy" referred "to all economic activities by workers and 
 To promote decent work, there needs to be a comprehensive and integrated strategy cutting across a range of policy areas and involving a range of institutional and civil society actors that eliminates the negative aspects of informality, while preserving the significant job creation and income generation potential of the informal economy. It should promote the protection and incorporation of workers and economic units in the informal economy into the mainstream economy.\
 \
 
-## Analysis
+## About the data: Household Survey for Bolivia 2018
+
+SUMMARY The Household Survey is an instrument of the National Institute of Statistics (INE), which aims to provide statistics and socio-economic and demographic indicators of the Bolivian population, necessary for the formulation, evaluation, monitoring of policies and design of action programs contained in the PDES 2016 - 2020.
+
+It is done through the application of a multi-thematic ballot that allows the study of the well-being of the households.
+
+SPECIFIC OBJECTIVES
+
+The 2018 Household Survey has the following specific objectives: 1. Produce a database with updated information on important variables that will generate statistics and sector indicators for monitoring the expected results of the SDP and the goals of the ODS. 2. To measure in a timely manner the behavior of poverty indicators of the Bolivian population according to their determinants. 3. Identify the demographic and socioeconomic conditions of the population with work or employment activity, their household income, poverty, housing quality, health care and education, among other variables.
+
+METHODOLOGY
+
+The Household Survey 2018 presents a complete picture of the living conditions of the Bolivian population. The unit of analysis for this survey was Bolivian households, with sampling units such as Census Sectors, Census Segments, Housing, and the implementation of Primary Sampling Units (PSU) that match the census sectors or a grouping of them. It is a cross-sectional survey.
+
+The methodology applied for the collection of information is the Direct Interview, conducted by duly trained personnel who visited the selected households during the information collection period, using a multi-thematic ballot that allows the study of the households' welfare.
+
+THEMATIC SCOPE
+
+a)  Characteristics of the Housing
+b)  Socio-demographic characteristics
+c)  Migration
+d)  Characteristics in Health
+e)  Educational Features. Access and Use of Information and Communication Technologies (ICT)
+f)  Activity Condition and Occupational Characteristics
+g)  Non-labor household income
+h)  Household expenses
+
+Measurement of employment, unemployment and underemployment indicators, calculation of poverty indicators (Incidence, Gap and Severity of Poverty), calculation of access indicators and years of schooling, calculation of demographic indicators. Elaboration and monitoring of economic and social development policies.
+
+# Analysis
 
 Explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than simple linear regression for prediction problems.
+
+## Data Wrangling
 
 You can also embed plots, for example:
 
@@ -53,6 +96,8 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Data modeling approaches
 
 describing data
 
@@ -72,15 +117,33 @@ Data partition
 
 The partitioning of the database into the training and testing sub-samples is done following the criteria of maintaining the balance of formal and informal workers from the original base, that is, we know that the original base presents a proportion of about 80% of informal workers and 20% of formal workers, for this reason, it is of utmost importance to maintain these proportions in the sub-samples that we will create and use for both the training and the validation of our models.
 
-## Results
+# Results
 
 This section presents the modeling results and discusses the model performance.
+
+Logistic regression results
+
+```{r Logistic regression model, include=FALSE}
+glm_model <-  glm(formality ~ ., data= train_set, family = "binomial") #model
+```
+
+````{r logistic results}
+summary(glm_model)
+````
 
 Classification tree for informality labor
 
 ![Classification tree for labor informality](Plots/tree.PNG "Classification tree for labor informality")
 
-## Conclusion
+According to the results of our first random forest model, we tune our tree number parameter on 100 considering tha the average error remains contant beyond this threshold.
+
+![Number of trees in the forest and average error](Plots/Rplot tree tuning.png "Number of trees in the forest and average error")
+
+The variables importance according to our random forest model is:
+
+![Importance of variables according to random forest methodology](Plots/Rplot Importance.png "Importance of variables according to random forest methodology")
+
+# Conclusion
 
 Brief summary of the report, its potential impact, its limitations, and future work.
 
@@ -94,4 +157,4 @@ Brief summary of the report, its potential impact, its limitations, and future w
 
 In a later paper I would like to distinguish informal workers between those who have voluntarily chosen to be part of this sector and those who are informal out of necessity, in this sense I think that in order to make this distinction it will be key to distinguish the monetary income of each sector, hoping that the voluntary informals earn much more money than the informals out of necessity, another group of variables could also help to make this distinction, perhaps elements such as the characteristics of the housing, the assets they possess or the degree of education of the workers could be variables that would allow for a relatively precise classification of both sectors. In this way, appropriate policies could be designed to advance the labor formalization of these people; it is very likely that the measures required to formalize some are not necessarily the same as those leading to the formalization of the others.
 
-## References
+# References

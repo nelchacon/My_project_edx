@@ -245,6 +245,9 @@ test_index <- createDataPartition(finalbase$formality, times = 1, p = 0.2, list 
 test_set <- finalbase[test_index, ]
 train_set <- finalbase[-test_index, ]
 
+#saveRDS(test_set, file = "test_set.Rds")
+#saveRDS(train_set, file = "train_set.Rds")
+
 #checking that training and testing sets maintain the balance of 80% of informal workers
 
 prop.table(table(train_set$formality))  #they are ok, around 80% informality
@@ -262,6 +265,8 @@ hat_logit <- predict(glm_model, newdata = test_set, type = "response") #predicti
 
 hat_logit <- ifelse(hat_logit > 0.5, "1", "0") %>% factor # rounding the predictions for comparison
 confusionMatrix(hat_logit, test_set$formality)  # accuracy
+
+summary(glm_model)  # see the results of the model
 
 # 2. SECOND MODEL: CLASSIFICATION TREE
 
@@ -313,40 +318,9 @@ rpart_hat_best <- predict(best_rpart, test_set)
 
 confusionMatrix(rpart_hat_best, test_set$formality)$overall["Accuracy"]
 
-
+# classification tree plot
 plot(best_rpart, margin = 0.1)
 text(best_rpart, cex = 0.25)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-cartmodel <- rpart(formality ~ .,
-                       data = train_set,
-                      control = rpart.control(cp = 0, minsplit = 2))
-
-
-
-#confusion matrix
-
-formal_hat1new <- predict(cartmodel, test_set, type="class")
-
-formal_hat1new <- factor(formal_hat1new)
-
-confusionMatrix(data = formal_hat1new, reference=test_set$formality)
-
-
-
-
 
 
 # 3. LAST MODEL: RANDOM FOREST
@@ -383,9 +357,7 @@ varImpPlot(rf)
 rf$mtry
 
 
-
-
-#Best model tuned
+#Best random forest model tuned
 
 rf_best <- randomForest(formality ~ .,
                         data = train_set,
@@ -402,3 +374,4 @@ rf_predict_best <- factor(rf_predict_best)
 
 confusionMatrix(data = rf_predict_best, reference=factor(test_set$formality))
 importance(rf_best)
+varImpPlot(rf_best)
