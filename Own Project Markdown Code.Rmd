@@ -17,6 +17,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #load datasets
 
+mydata <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final project edx/My_project_edx/mydata.Rds")
+
 test_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final project edx/My_project_edx/test_set.Rds")
 
 train_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final project edx/My_project_edx/train_set.Rds")
@@ -47,7 +49,6 @@ Studies have identified that some of the main causes for informality include ele
 
 The promotion of decent work needs a comprehensive and integrated strategy and involves a range of institutional and society actors that eliminates the negative aspects of informality, while preserving the significant job creation and income generation potential of the informal economy. It should promote the protection and incorporation of workers and economic units in the informal economy into the mainstream economy using a good understanding of the main factors that cause it in each country.
 
-
 ## About the data: Household Survey for Bolivia 2018
 
 For this project I will be using data from the Household Survey for Bolivia 2018, this information is freely accessible through the website of the National Institute of Statistics: (<https://www.ine.gob.bo/index.php/censos-y-banco-de-datos/censos/bases-de-datos-encuestas-sociales/>). The Household Survey is an instrument which aims to provide statistics and socio-economic and demographic indicators of the Bolivian population, necessary for the formulation, evaluation, monitoring of policies and design of action programs for the country development.
@@ -73,11 +74,41 @@ The rest of the document is structured in the following way, an Analysis section
 
 # Analysis
 
-Explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than simple linear regression for prediction problems.
-
 ## Data wrangling & descriptive elements
 
-Here I explain my data wrangling: filtrando solo a PEA, y de ellos solo a ocupados, luego explico la imputación de datos.
+For this project I take 15 demographic and labor market variables from the Bolivian Household Survey for 2018. These 15 variables have been selected taking into account that they can be good predictors of labor informality observed in the country. Among the selected demographic variables are: 1. the zone (urban or rural), 2. gender (male or female), 3. age, 4. race (whether the interviewee is considered indigenous or not), 5. number of household members, 6. interviewee's years of education and 7. If the interviewee is considered poor according to the household income criteria.
+
+In the case of the labour market variables included in our study we have the following: 8. economically active population (persons 15 years of age or older), 9. labor category (distinguishing between employees, employers, self-employed and unpaid), 10. branch of labor activity (with 9 categories: agriculture, mining, manufacturing, basic services, construction, trade, transportation, financial institutions and social services), 11. size of the company (small, medium and large), 12. labor formality (our independent variables that take the value 0 for informal and 1 for formal), 13. working hours per week, 14. monthly labor income (measured in local currency), and 15. length of time in the job (measured in years).
+
+We can see here the summary of our raw data base:
+
+```{r structure of the raw data, echo=FALSE}
+summary(mydata)
+```
+
+The initial raw data base presents data for 37,517 people; however, in a first stage we will filter the data to keep only those people who are considered economically active, that is, those who are 15 years old or older, remaining after this operation with 17,659 observations.
+
+In a next stage we look for extreme values in the variables so that once identified we can isolate them in order to avoid disturbance of these few observations in the models we are going to develop. To perform this process, we use Tukey's rule presented in the course, which states that the extreme values will be those that exceed the values located at the 75th percentile of the distribution plus 1.5 the interquartile range (IQR), see [@irizarry2019introduction] for more details.
+
+**Outliers.** We also identified extreme values in four of the numerical variables in our database (age, hours of work, labor income and seniority), on the other hand, we did not find evidence of outliers in the variable years of education. The total of extreme values found is 2,878, these observations were filtered from the database to avoid potential biases in the subsequent projections.
+
+**Missing values.** Once the outliers were eliminated, we concentrated on working with the missing values, identifying the absence of 562 data in 3 variables of our base: size of the companies, years of education and poverty. For this project I decided to impute the missing values using the BagImpute function of the Caret package[^1] instead of eliminating the observations with missing data, this for two reasons, the first to practice with the use of this important data imputation tool and the second, to not continue losing data, since with the cleaning of outliers I lost almost 3,000 observations.
+
+[^1]: This method of recovering missing values uses bagging of regression trees. It provides the recovery of missing values for several variables at once, based on regression dependencies. For more information you can consult the Help repository for Pre-Processing of Predictor on the Caret package.
+
+The first step for the imputation of the missing values was to convert the character variables into factors, and then to be able to convert all the variables into dummies, this because the BagImpute function only allows to make imputations for numerical variables. Once the imputation was done, the only thing left to do was to work a little with the new predicted variables (education, firm size and poverty) to return them to the original values of the initial base and thus begin with the construction of the forecast models for labor informality.
+
+**Data partition.** Once the new imputed variables (new education, new poverty and new firm size) were added to the data, I proceeded with he partitioning of the database into the training and testing sub-samples following the criteria of maintaining the balance of the variable of interest (in this case labor formality), that is, we know that the original base presents a proportion of about 80% of informal workers and 20% of formal workers, for this reason, it is of utmost importance to maintain these proportions in the sub-samples that we will create and use for both the training and the validation of our models.
+
+My database, after the cleaning of extreme values and the imputation of missing values has been left with 17,734 observations. We can see that in this final base, 3,046 people are formal workers and the remaining 11,688 are informal workers, that is, the informality rate is 79.3%.
+
+Using this rate as a reference, I proceed to create a partition of this database into a training set and a test set. My new training base is composed of 11,786 observations and the testing base of 2,948, as you can see below, both sub-samples maintain the proportion of approximately 80% informal and 20% formal workers:
+
+```{r ratios new test and train sets}
+prop.table(table(train_set$formality))
+
+prop.table(table(test_set$formality))
+```
 
 ## Data modeling approaches
 
@@ -90,16 +121,6 @@ Figure 1 shows some of the demographic and labor characteristics of Bolivian wor
 Plot 2
 
 ![Wage differences, seniority and hours worked between formal and informal workers](Plots/Rplot2.png "Wage differences, seniority and hours worked between formal and informal workers")
-
-Imputing missing data
-
-Sometimes we have some problems with missing values in real-life datasets. Sometimes missing values is a real problem for research. How to recover missing values in our datasets? In this post we will consider one very interesting method of recovering missing values. It is method a bagging of regression trees. It provides the recovery of missing values for several variables at once, based on regression dependencies.
-
-For bagging of regression trees we will use caret package for R programming language.
-
-Data partition
-
-The partitioning of the database into the training and testing sub-samples is done following the criteria of maintaining the balance of formal and informal workers from the original base, that is, we know that the original base presents a proportion of about 80% of informal workers and 20% of formal workers, for this reason, it is of utmost importance to maintain these proportions in the sub-samples that we will create and use for both the training and the validation of our models.
 
 ### Logistic regression
 
@@ -156,6 +177,6 @@ Brief summary of the report, its potential impact, its limitations, and future w
 
 -   try to send it January 3rd
 
-In a later paper I would like to distinguish informal workers between those who have voluntarily chosen to be part of this sector and those who are informal out of necessity, in this sense I think that in order to make this distinction it will be key to distinguish the monetary income of each sector, hoping that the voluntary informals earn much more money than the informals out of necessity, another group of variables could also help to make this distinction, perhaps elements such as the characteristics of the housing, the assets they possess or the degree of education of the workers could be variables that would allow for a relatively precise classification of both sectors. In this way, appropriate policies could be designed to advance the labor formalization of these people; it is very likely that the measures required to formalize some are not necessarily the same as those leading to the formalization of the others.
+As a next step I would like to distinguish informal workers between those who have voluntarily chosen to be part of this sector and those who are informal out of necessity, in this sense I think that in order to make this distinction it will be key to distinguish the monetary income of each sector, hoping that the voluntary informals earn much more money than the informals out of necessity, another group of variables could also help to make this distinction, perhaps elements such as the characteristics of the housing, the assets they possess or the degree of education of the workers could be variables that would allow for a relatively precise classification of both sectors. In this way, appropriate policies could be designed to advance the labor formalization of these people; it is very likely that the measures required to formalize some are not necessarily the same as those leading to the formalization of the others.
 
 # References
