@@ -1,5 +1,5 @@
 ---
-title: "Predicting Labor Informality"
+title: "Predicting Labor Informality in Bolivia"
 author: "Nelson Chacon Rendon"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: pdf_document
@@ -25,52 +25,36 @@ train_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final p
 
 # Introduction
 
-Describes the dataset and variables, summarizes the goal of the project and key steps performed.
+## Motivation and goals
+
+Labor informality is a serious problem for several underdeveloped countries, one of them being Bolivia, where according to the latest data it would exceed 80% of total employment. Informality is considered negative for an economy because behind it are hidden elements such as the precariousness of work, low salaries, risks of accidents and labor exploitation, absence of health insurance or retirement, to mention just a few.
+
+For this reason, it is fundamental for the country's authorities and economic and social policy makers to understand what are the main factors behind people's decision to enter the labor market but as informal workers. The academic literature on the subject indicates that characteristics such as education, labor and retirement legislation, minimum wage rules, and other intrinsic factors such as the customs or traditions of each population are the most important in explaining labor informality.
+
+It is along these lines that my project focuses on developing models studied within the Platform (edX) courses that can serve to classify between formal and informal workers using a series of demographic and labor variables for Bolivian workers. My interest goes a bit beyond simple classification, I also want to know what are the main variables that explain the results behind each of the models and thus be able to know with some certainty what are the factors that should be taken into account when designing economic or social policies that seek to reduce labor informality in my country.
 
 References like this [@RePEc:grm:ecoyun:201907].
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## A glimpse about labor informality
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The International Labor Organization (ILO) --*main agency of United Nations for setting labour standards, developing policies and devise programmes promoting decent work for all women and men* --- states that the term "informal economy" refers to a certain way of carrying out economic activities. The informal economy comprises more than half of the global labour force and more than 90 per cent of micro and small enterprises worldwide. Informality is an important characteristic of labour markets in the world with millions of economic units operating and hundreds of millions of workers pursuing their livelihoods in conditions of informality.
 
-```{r cars}
-summary(cars)
-```
+The expression "informal economy" encompasses a huge diversity of situations and phenomena, as mentioned before. Indeed, the informal economy manifests itself in a variety of forms across and within economies. In this sense, formalization processes and measures aiming to facilitate transitions to formality need to be tailored to specific circumstances faced by different countries and categories of economic units or workers.
 
-## About labor informality
+The main characteristics of work in the informal economy are often characterized by small or undefined work places, unsafe and unhealthy working conditions, low levels of skills and productivity, low or irregular incomes, long working hours and lack of access to information, markets, finance, training and technology. Whats more, most of the workers in the informal economy are not recognized, registered, regulated or protected under labour legislation and social protection.
 
-International Labor Organization (ILO) states that....
+Studies have identified that some of the main causes for informality include elements related to the economic context, the legal, regulatory and policy frameworks and to some micro level determinants such as low level of education, discrimination, poverty and lack of access to economic resources, to property, to financial and other business services and to markets. The high incidence of the informal economy is a major challenge for the rights of workers and decent working conditions and has a negative impact on enterprises, public revenues, government's scope of action, soundness of institutions and fair competition.
 
-The term "informal sector" was first coined in 1972, at the outcome of a comprehensive ILO employment advisory mission to Kenya^33^, and was later converted to "informal economy" to underline the fact that informality is not a "sector", but a certain way of carrying out economic activities. Interestingly, "The (Kenya mission) report acknowledges that the informal sector idea originated not with the high-level foreign "development experts" brought in for the mission but from the work and the staff of the Institute or Development Studies of the University of Nairobi, a fact which has been generally forgotten since then. In other words, it was not the ILO which invented the concept of the informal sector. It came out of the thinkers and analysts of the Third World"
+The promotion of decent work needs a comprehensive and integrated strategy and involves a range of institutional and society actors that eliminates the negative aspects of informality, while preserving the significant job creation and income generation potential of the informal economy. It should promote the protection and incorporation of workers and economic units in the informal economy into the mainstream economy using a good understanding of the main factors that cause it in each country.
 
-The informal economy comprises more than half of the global labour force and more than 90 per cent of micro and small enterprises (MSEs) worldwide. Informality is an important characteristic of labour markets in the world with millions of economic units operating and hundreds of millions of workers pursuing their livelihoods in conditions of informality.\
-\
-The expression "informal economy" encompasses a huge diversity of situations and phenomena. Indeed, the informal economy manifests itself in a variety of forms across and within economies. Formalization processes and measures aiming to facilitate transitions to formality need to be tailored to specific circumstances faced by different countries and categories of economic units or workers.\
-\
-Work in the informal economy is often characterized by small or undefined work places, unsafe and unhealthy working conditions, low levels of skills and productivity, low or irregular incomes, long working hours and lack of access to information, markets, finance, training and technology. Workers in the informal economy are not recognized, registered, regulated or protected under labour legislation and social protection. The root causes of informality include elements related to the economic context, the legal, regulatory and policy frameworks and to some micro level determinants such as low level of education, discrimination, poverty and, as mentioned above, lack of access to economic resources, to property, to financial and other business services and to markets. The high incidence of the informal economy is a major challenge for the rights of workers and decent working conditions and has a negative impact on enterprises, public revenues, government's scope of action, soundness of institutions and fair competition.\
-\
-the term "informal economy" referred "to all economic activities by workers and economic units that are -- in law or in practice -- not covered or insufficiently covered by formal arrangements." This description was endorsed 13 years later which further clarified that the term does not cover illicit activities, and that the expression "economic units" in the definition refers to units that (a) employ hired labour; (b) individuals working on their own account, and (c) cooperatives and social and solidarity economy units. R.204 constitutes a historic landmark for the world of work as it is the first international standard focusing exclusively on the informal economy in its entirety.\
-\
-To promote decent work, there needs to be a comprehensive and integrated strategy cutting across a range of policy areas and involving a range of institutional and civil society actors that eliminates the negative aspects of informality, while preserving the significant job creation and income generation potential of the informal economy. It should promote the protection and incorporation of workers and economic units in the informal economy into the mainstream economy.\
-\
 
 ## About the data: Household Survey for Bolivia 2018
 
-SUMMARY The Household Survey is an instrument of the National Institute of Statistics (INE), which aims to provide statistics and socio-economic and demographic indicators of the Bolivian population, necessary for the formulation, evaluation, monitoring of policies and design of action programs contained in the PDES 2016 - 2020.
+For this project I will be using data from the Household Survey for Bolivia 2018, this information is freely accessible through the website of the National Institute of Statistics: (<https://www.ine.gob.bo/index.php/censos-y-banco-de-datos/censos/bases-de-datos-encuestas-sociales/>). The Household Survey is an instrument which aims to provide statistics and socio-economic and demographic indicators of the Bolivian population, necessary for the formulation, evaluation, monitoring of policies and design of action programs for the country development.
 
-It is done through the application of a multi-thematic ballot that allows the study of the well-being of the households.
+The 2018 Household Survey has the following specific objectives: 1. Produce a database with updated information on important variables that will generate statistics and sector indicators for monitoring the Sustainable Development Goals (SDG). 2. To measure the behavior of poverty indicators of the Bolivian population according to their determinants. 3. Identify the demographic and socioeconomic conditions of the population with work or employment activity, their household income, poverty, housing quality, health care and education.
 
-SPECIFIC OBJECTIVES
-
-The 2018 Household Survey has the following specific objectives: 1. Produce a database with updated information on important variables that will generate statistics and sector indicators for monitoring the expected results of the SDP and the goals of the ODS. 2. To measure in a timely manner the behavior of poverty indicators of the Bolivian population according to their determinants. 3. Identify the demographic and socioeconomic conditions of the population with work or employment activity, their household income, poverty, housing quality, health care and education, among other variables.
-
-METHODOLOGY
-
-The Household Survey 2018 presents a complete picture of the living conditions of the Bolivian population. The unit of analysis for this survey was Bolivian households, with sampling units such as Census Sectors, Census Segments, Housing, and the implementation of Primary Sampling Units (PSU) that match the census sectors or a grouping of them. It is a cross-sectional survey.
-
-The methodology applied for the collection of information is the Direct Interview, conducted by duly trained personnel who visited the selected households during the information collection period, using a multi-thematic ballot that allows the study of the households' welfare.
-
-THEMATIC SCOPE
+The Household Survey 2018 presents a complete picture of the living conditions of the Bolivian population. The unit of analysis for this survey was Bolivian households and it is a cross-sectional survey. The thematic scope of the survey covers the following eight aspects:
 
 a)  Characteristics of the Housing
 b)  Socio-demographic characteristics
@@ -81,27 +65,27 @@ f)  Activity Condition and Occupational Characteristics
 g)  Non-labor household income
 h)  Household expenses
 
-Measurement of employment, unemployment and underemployment indicators, calculation of poverty indicators (Incidence, Gap and Severity of Poverty), calculation of access indicators and years of schooling, calculation of demographic indicators. Elaboration and monitoring of economic and social development policies.
+For the purpose of this project, I will use the measurement of employment, unemployment and underemployment indicators, calculation of poverty indicators, calculation of access indicators and years of schooling, and calculation of other demographic indicators for the construction of the models that will allow us to forecast labor informality.
+
+## Document structure
+
+The rest of the document is structured in the following way, an Analysis section where in a first part I explain the process of data cleaning, imputation of missing observations and partition of the base into a training base and a testing base, then I explain the development of three different models of machine learning to make forecasts of labor informality. In the Results section I present the main findings of my three models explaining the main characteristics of each one. Finally, I conclude my project by summarizing the mos important results for my models, explaining the limitations of my work and the future ideas to be developed.
 
 # Analysis
 
 Explains the process and techniques used, including data cleaning, data exploration and visualization, any insights gained, and your modeling approach. At least two different models or algorithms must be used, with at least one being more advanced than simple linear regression for prediction problems.
 
-## Data Wrangling
+## Data wrangling & descriptive elements
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Here I explain my data wrangling: filtrando solo a PEA, y de ellos solo a ocupados, luego explico la imputación de datos.
 
 ## Data modeling approaches
 
 describing data
 
 ![Percentage of informal workers according to different criteria](Plots/Rplot1.png "Percentage of informal workers according to different criteria")
+
+Figure 1 shows some of the demographic and labor characteristics of Bolivian workers that would be accompanied by high levels of labor informality. For example, we observe that very high levels of informality among workers who do not receive remuneration, those who work in agricultural activities in rural areas, or those self-employed workers who work in small companies (with less than 5 workers), are also accompanied by high levels of informality among workers in commerce, construction or transportation, as well as those who identify themselves as indigenous.
 
 Plot 2
 
@@ -116,6 +100,12 @@ For bagging of regression trees we will use caret package for R programming lang
 Data partition
 
 The partitioning of the database into the training and testing sub-samples is done following the criteria of maintaining the balance of formal and informal workers from the original base, that is, we know that the original base presents a proportion of about 80% of informal workers and 20% of formal workers, for this reason, it is of utmost importance to maintain these proportions in the sub-samples that we will create and use for both the training and the validation of our models.
+
+### Logistic regression
+
+### Classification trees
+
+### Random forest
 
 # Results
 
@@ -135,7 +125,7 @@ Classification tree for informality labor
 
 ![Classification tree for labor informality](Plots/tree.PNG "Classification tree for labor informality")
 
-According to the results of our first random forest model, we tune our tree number parameter on 100 considering tha the average error remains contant beyond this threshold.
+According to the results of our first random forest model, we tune our tree number parameter on 100 considering that the average error remains constant beyond this threshold.
 
 ![Number of trees in the forest and average error](Plots/Rplot tree tuning.png "Number of trees in the forest and average error")
 
