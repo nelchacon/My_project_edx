@@ -278,8 +278,8 @@ summary(glm_model)  # see the results of the model
 # 2. SECOND MODEL: CLASSIFICATION TREE
 
 #Define control and grid for optimization and tuning parameters 
-control <- trainControl(method="cv", number = 10)
-grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
+#control <- trainControl(method="cv", number = 10)
+#grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 
 train_rpart <- train(formality ~ .,
                      method = "rpart",
@@ -292,7 +292,7 @@ plot(train_rpart)
 rpart_hat <- predict(train_rpart, test_set)
 
 #Confusion matrix
-confusionMatrix(rpart_hat, test_set$formality)$overall["Accuracy"]
+confusionMatrix(rpart_hat, test_set$formality)
 
 # Model tree plot
 plot(train_rpart$finalModel, margin = 0.1)
@@ -309,7 +309,7 @@ best_rpart <- train(formality ~ .,
 
 rpart_hat_best <- predict(best_rpart, test_set)
 
-confusionMatrix(rpart_hat_best, test_set$formality)$overall["Accuracy"]
+confusionMatrix(rpart_hat_best, test_set$formality)
 
 
 # 3. LAST MODEL: RANDOM FOREST
