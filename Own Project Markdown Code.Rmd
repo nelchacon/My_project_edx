@@ -24,18 +24,22 @@ test_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final pr
 train_set <- readRDS("C:/Users/nelson/projects/Proyecto final Harvard/my final project edx/My_project_edx/train_set.Rds")
 
 ```
-
+````{r, echo=FALSE, include=FALSE}
+library(caret)
+library(rpart)
+library(randomForest)
+````
 # Introduction
 
 ## Motivation and goals
 
 Labor informality is a serious problem for several underdeveloped countries, one of them being Bolivia, where according to the latest data it would exceed 80% of total employment. Informality is considered negative for an economy because behind it are hidden elements such as the precariousness of work, low salaries, risks of accidents and labor exploitation, absence of health insurance or retirement, to mention just a few.
 
+[@canavire2016informality]Informality in labor markets is characteristic of both developed and developing economies and, therefore, generates significant social costs in all nations. Schneider (2004 and 2007), for example, showed that the informal sector represents between 8% and 23% of GDP in developed countries compared with 23% and 60% in developing nations. Other authors (Bourguignon, 1979; Galvis, 2012) have found that informal workers tend to generate a lower proportion of physical capital and earn lower average wages than formal workers. Furthermore, because the formal sector usually contracts the most qualified workers, it is characterized by an excess labor supply that it cannot employ. Therefore, the informal sector must employ these residual workers (Raunch, 1991; Maloney, 2004).
+
 For this reason, it is fundamental for the country's authorities and economic and social policy makers to understand what are the main factors behind people's decision to enter the labor market but as informal workers. The academic literature on the subject indicates that characteristics such as education, labor and retirement legislation, minimum wage rules, and other intrinsic factors such as the customs or traditions of each population are the most important in explaining labor informality.
 
 It is along these lines that my project focuses on developing models studied within the Platform (edX) courses that can serve to classify between formal and informal workers using a series of demographic and labor variables for Bolivian workers. My interest goes a bit beyond simple classification, I also want to know what are the main variables that explain the results behind each of the models and thus be able to know with some certainty what are the factors that should be taken into account when designing economic or social policies that seek to reduce labor informality in my country.
-
-References like this [@RePEc:grm:ecoyun:201907].
 
 ## A glimpse about labor informality
 
@@ -84,7 +88,7 @@ Figure 2 we can see other characteristics of numerical variables (hours worked p
 
 ![Wage differences, seniority and hours worked between formal and informal workers](Plots/Rplot2.png "Wage differences, seniority and hours worked between formal and informal workers")
 
-## Data wrangling & descriptive elements
+## Data wrangling & descriptive analysis
 
 For this project I take 15 demographic and labor market variables from the Bolivian Household Survey for 2018. These 15 variables have been selected taking into account that they can be good predictors of labor informality observed in the country. Among the selected demographic variables are: 1. the zone (urban or rural), 2. gender (male or female), 3. age, 4. race (whether the interviewee is considered indigenous or not), 5. number of household members, 6. interviewee's years of education and 7. If the interviewee is considered poor according to the household income criteria.
 
@@ -138,35 +142,54 @@ $$
 
 In this case, we define outcome variable $Y$ as 1 for formal workers and 0 otherwise, and $X$ as a matrix of our reminding 13 explanatory variables. This methodology must be slightly adjusted at the time of making the forecasts, since they are not produced in a dichotomous way (0 or 1) but as continuous values that are between these limits, so they must be slightly corrected so that forecasts greater than 0.5 are equal to 1 and those less than 0.5 equal to 0.
 
-The R command used for estimating this first approach is:
+The R code used for estimating this first approach is:
 
 ```{r Logistic Regression, echo=T, results='hide'}
 glm_model <-  glm(formality ~ ., data= train_set, family = "binomial")
 ```
 
-We will see the accuracy and the main variables coefficients (size and significance) in more detail in the Results section.
+We will see the accuracy and the main coefficients of the variables (size and significance) in more detail in the Results section.
 
-### Classification trees
+### Classification or decision trees
 
-explicacion sobre estos modelos
+Classification trees. I use this methodology to take advantage of the visual benefits it offers for the interpretation of results, specifically I talk about the option of graphing the decision trees that allow us to see which are the main variables and decision thresholds to classify the observations. As mentioned by Irizarry, this methodology also has some negative aspects such as the ease of over-training, reduced precision and low stability in relation to changes in the training data.
 
-explicar control y calibracion de parametros
+For the application of this methodology I establish some additional control measures such as the cross validation (10 fold), and a grid of values ranging from 0 to 0.1 in a range of 25 values for the complexity parameter. The code for this model is as follows:
 
-y comando de modelo
+
+```{r Decision tree, results='hide'}
+train_rpart <- train(formality ~ .,
+                     method = "rpart",
+                     tuneGrid = data.frame(cp = seq(0.0, 0.1, len = 25)),
+                     trControl = trainControl("cv", number = 10),
+                     data = train_set)
+```
+
+Once the first classification tree model is calculated, I identify the optimal complexity parameter through the \$bestTune command and use it in a new model. The results of these models are presented and explained in detail in the following section.
 
 ### Random forest
 
-explicacion sobre estos modelos
+Random forests. The last model developed for this exercise is the randomized forest, with this methodology I seek to improve a little the precision of the predictions through the intensive calculation of many trees and the subsequent average of the results, with it we try to overcome the instability of the classification tree methodology, however we sacrifice in some way the interpretability of the models because you can no longer build a decision tree because we now have a forest instead of a single tree. Nevertheless, the methodology offers an alternative of interpretation that we will take advantage of to know the variables that would explain the labor informality, this information is known as the importance variable.
 
-explicar control y calibracion de parametros
+For the construction of our random forests we also used cross-validation (10 fold) and a grid for the calibration of the number of variables to be included in the partition of each tree node (mtry parameter), we defined the number of trees in 150 and the sample for each iteration in 2000 observations. The code for this run is:
 
-y comando de modelo
+```{r Random Forest, echo=T, results='hide'}
+rfcontrol <- trainControl(method="cv", number = 10)
+
+rf_best <- randomForest(formality ~ .,
+                        data = train_set,
+                        trControl = rfcontrol,
+                        ntree = 100,
+                        minNode = rf$mtry)
+```
+
+In this case, after running the first model we observe that the error in the model does not improve after 100 trees in each model (see Figure X), therefore this would be the optimal number to include, on the other hand, the initial model gives us as result that the optimal number of variables to include in each model is 3 (mtry).
+
+![Number of trees in the forest and average error](Plots/Rplot tree tuning.png "Number of trees in the forest and average error")
 
 # Results
 
-This section presents the modeling results and discusses the model performance.
-
-Logistic regression results
+The logistic regression model reports an accuracy of 0.9135, with a sensitivity of 0.9564 and a specificity of 0.7492, the balanced accuracy (a more appropriate measure than the overall accuray) of this model is 0.8528. In general, this first approximation offers a fairly good accuracy, and the results of the regression *per se* are also very interesting to interpret:
 
 ```{r Logistic regression model, include=FALSE}
 glm_model <-  glm(formality ~ ., data= train_set, family = "binomial") #model
@@ -176,43 +199,38 @@ glm_model <-  glm(formality ~ ., data= train_set, family = "binomial") #model
 summary(glm_model)
 ```
 
-Classification tree for informality labor
+We observe that variables such as the small and medium size of enterprises or being a self-employed worker are strong factors that would affect the fact of being an informal worker, we appreciate this in the negative sign of the coefficients, their size and their statistical significance. On the other hand, the factors that would explain formal work would be constituted by being a worker in the financial sector, mining or basic and social services.
+
+The results of the second model, classification tree, also show important findings. First, we obtain an overall accuracy of 0.9115 with this methodology, a sensitivity of 0.9645 and a specificity of 0.7082, with a balanced accuracy of 0.8363.
+
+In addition, this methodology offers us a very valuable graphic element to perform the interpretation of the results, the decision tree:
 
 ![Classification tree for labor informality](Plots/tree.PNG "Classification tree for labor informality")
 
-According to the results of our first random forest model, we tune our tree number parameter on 100 considering that the average error remains constant beyond this threshold.
+In this tree we can see that the first variable to make the classification between formal and informal workers is the small size of the company, in a next level we see that the labor income variable plays an important role, as well as the years of education of the people, working in sectors like construction or the years of seniority in the job. This graph is of great help to better understand the results of the model and the main elements that would be behind the classification.
 
-![Number of trees in the forest and average error](Plots/Rplot tree tuning.png "Number of trees in the forest and average error")
+Finally, we have the results of the random forest, using this methodology we obtain an overall accuracy of 0.9189, a sensitivity of 0.9658 and a specificity of 0.7393, with a balanced accuracy of 0.8526, being this by far the best of the three models in terms of forecasting accuracy.
 
-The variables importance according to our random forest model is:
+As mentioned previously, the main disadvantage of this technique is that it loses the interpretability of the results by having forests instead of trees and not being able, for example, to make the graphical representation of the results through trees. However, the random forest methodology offers us an attractive alternative, that of being able to identify the Main Variables of the model:
 
 ![Importance of variables according to random forest methodology](Plots/Rplot Importance.png "Importance of variables according to random forest methodology")
 
-Table of model results (accuracy)
-
-| Model               | Accuracy | Notes              |
-|---------------------|----------|--------------------|
-| Logistic regression | 0.9112   | control cv         |
-| Classification tree | 0.8942   | control cv         |
-| Random Forest       | 0.9180   | control cv         |
-| Random Forest tuned | 0.9475   | control cv 10 fold |
-
-: Accuracy for each model of labor informality
+According to these results, we observe that the 4 main variables that would be explaining the classification between informal and formal workers using random forest are: firstly, the size of the company where the workers are employed, secondly, the labor income, then the years of education of each worker and finally, the branch of activity where the workers work. These results coincide in some way with those found in the two previous models.
 
 # Conclusion
 
-Brief summary of the report, its potential impact, its limitations, and future work.
+This small project focused on building models to classify workers into formal and informal using data from the Bolivian Household Survey for 2018. Three different approaches were constructed using logistic regression, classification tree and random forest, obtaining the following results:
 
-Los tres modelos tienen buena precisión de pronóstico y en los tres casos vemos que las 3 principales variables que estarían explicando la informalidad laboral son el tamaño de la empresa, el ingreso laboral y la categoria laboral.
+| Model               | Overall and balanced accuracy | Sensitivity & specificity | Main variables                                      |
+|---------------------|-------------------------------|---------------------------|-----------------------------------------------------|
+| Logistic regression | 0.9135 / 0.8528               | 0.9564 / 0.7492           | firm size, labor category and labor branch          |
+| Classification tree | 0.9115 / 0.8363               | 0.9645 / 0.7082           | firm size, labor income, education and labor branch |
+| Random forest       | 0.9189 / 0.8526               | 0.9658 / 0.7393           | firm size, labor income, education and labor branch |
 
--   5 points for 3 files
+: Summary of the main findings on each model
 
--   25 points a good report
+It should be noted that the results in terms of precision in the three models are very similar, with the exercise using random forest standing out very little. Similarly, all three models show signs that the main variables that would explain informal labor would be related to the size of the company that contracts, with small companies tending to employ more informal workers, and sectors such as construction and transport also being more associated with informal employment, other elements that would explain this category of employment would be income and education, where in both cases, lower values would imply greater likelihood of being classified as an informal worker.
 
--   20 points good R code script
-
--   try to send it January 3rd
-
-As a next step I would like to distinguish informal workers between those who have voluntarily chosen to be part of this sector and those who are informal out of necessity, in this sense I think that in order to make this distinction it will be key to distinguish the monetary income of each sector, hoping that the voluntary informals earn much more money than the informals out of necessity, another group of variables could also help to make this distinction, perhaps elements such as the characteristics of the housing, the assets they possess or the degree of education of the workers could be variables that would allow for a relatively precise classification of both sectors. In this way, appropriate policies could be designed to advance the labor formalization of these people; it is very likely that the measures required to formalize some are not necessarily the same as those leading to the formalization of the others.
+[@morales2015impact]Morales and Gomez point out that "for many authors informality is non-voluntary because it is associated with the impossibility of accessing to formal work due to their scarcity and mostly because many workers don't have enough skills to work in the formal sector. However, house survey-based studies showed that many workers are in the informal sector by their own decision and are satisfied of their situation". In this sense, and as a next step I would like to distinguish informal workers between those who have voluntarily chosen to be part of this sector and those who are informal out of necessity, in this sense I think that in order to make this distinction it will be key to distinguish the monetary income of each sector, hoping that the voluntary informals earn much more money than the informals out of necessity, another group of variables could also help to make this distinction, perhaps elements such as the characteristics of the housing, the assets they possess or the degree of education of the workers could be variables that would allow for a relatively precise classification of both sectors. In this way, appropriate policies could be designed to advance the labor formalization of these people; it is very likely that the measures required to formalize some are not necessarily the same as those leading to the formalization of the others.
 
 # References
