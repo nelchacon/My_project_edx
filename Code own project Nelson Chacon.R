@@ -2,21 +2,24 @@
 #Own Project Script: Predicting labor informality
 ##############################
 
-#Install required packages
+#Install required packages (This may take a while depending on what you already got, get a cup of coffee!!!)
+#If you are an Ubuntu user, consider there is some trouble installing tidyverse on Rstudio
+# you should first run this command on linux terminal: sudo apt-get install -y libxml2-dev libcur14-openssl-dev libssl-dev
+
 #if(!require(foreign)) install.packages("foreign", repos = "http://cran.us.r-project.org")
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 #if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 #if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
 if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-if(!require(gt)) install.packages("gt", repos = "http://cran.us.r-project.org")
+#if(!require(gt)) install.packages("gt", repos = "http://cran.us.r-project.org")
 #if(!require(scales)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-if(!require(repmis)) install.packages("repmis", repos = "http://cran.us.r-project.org")
-if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
+#if(!require(repmis)) install.packages("repmis", repos = "http://cran.us.r-project.org")
+#if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
 if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
-if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
+#if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
 if(!require(randomForest)) install.packages("randomForest", repos = "http://cran.us.r-project.org")
-
+if(!require(e1071)) install.packages("e1071", repos = "http://cran.us.r-project.org")
 
 #Load libraries we will use
 library(tidyverse)
@@ -24,14 +27,15 @@ library(caret)
 #library(data.table)
 #library(lubridate)
 library(ggplot2)
-library(gt)
-library(foreign)
+#library(gt)
+#library(foreign)
 #library(scales)
-library(repmis)
-library (readr)
+#library(repmis)
+#library (readr)
 library(rpart)
-library(Rborist)
+#library(Rborist)
 library(randomForest)
+library(e1071)
 
 
 #Load database from github repository (csv format)
@@ -44,10 +48,11 @@ View(mydata)
 
 summary(mydata)
 
+#Some frequencies for descriptive plots
 # Percentage of informal workers by gender
 table1 <- table(mydata$gender, mydata$formality)
 table1
-prop.table(table1,1)
+prop.table(table1,1) #remember that 1 is formal labor and 0 informal labor
 
 
 # Percentage of informal workers by zone
@@ -77,7 +82,7 @@ table6 <- table(mydata$firm_size, mydata$formality)
 table6
 prop.table(table6,1)
 
-# Percentage of informal workers by labor market
+# Percentage of informal workers by poverty criteria
 table7 <- table(mydata$poverty, mydata$formality)
 table7
 prop.table(table7,1)
@@ -157,7 +162,7 @@ max_senior  #the maximum labor seniority for avoiding outliers is 28 years
 #Lets clean the data from these extreme values
 
 eap.data.no <- filter(eap.data, age <= max_age, work_hours <= max_hours, work_income <= max_income, job_tenure <= max_senior)
-View(eap.data.no) #we deleted 2878 extreme observations from our data base
+View(eap.data.no) #we have deleted 2878 extreme observations from our data base
 
 #Imputing missing values
 
@@ -175,7 +180,7 @@ eap.data.no$poverty <- as.factor(eap.data.no$poverty)
 str(eap.data.no)  #now the variables are numeric or factors
 
 #Now lets track which variables have missing data
-summary(eap.data.no)
+summary(eap.data.no) # we see some NAs in a few variables
 sum(is.na(eap.data.no))  # we have 562 missing data observations /(firm size, education and poverty)
 
 eap.data.no$missFirm <- ifelse(is.na(eap.data.no$firm_size), "Y", "N") #want to know where are the NAs
@@ -193,13 +198,13 @@ str(forimputation)
 
 dummy.vars <- dummyVars(~., data=forimputation)
 train.dummy <- predict(dummy.vars, forimputation)
-#View(train.dummy)
+View(train.dummy)
 
 #now impute
 
 pre.process <- preProcess(train.dummy, method ="bagImpute")
 imputed.data <- predict(pre.process, train.dummy)
-#View(imputed.data)
+View(imputed.data)
 
 #lets put in order the imputed data before replacing in the last database
 
@@ -209,12 +214,12 @@ missimputed <- select(imputed.data, 22:24, 27:29)
 
 # recomputing the predicted missing values before including in data base
 
-missimputed$new_educ <- round(missimputed$educ,0)
+missimputed$new_educ <- round(missimputed$educ,0) #we just round the number to integers for years of education
 summary(missimputed$new_educ)
 
-missimputed$new_poverty <- ifelse(missimputed$poverty.notpoor>0.5, "notpoor", "poor")
+missimputed$new_poverty <- ifelse(missimputed$poverty.notpoor>0.5, "notpoor", "poor") #imputed values bigger than 0.5 for not poor are classified as not poor
 
-missimputed$new_firmsize <- ifelse(missimputed$firm_size.large>0.5, "large", ifelse(missimputed$firm_size.medium>0.5, "medium", "small"))
+missimputed$new_firmsize <- ifelse(missimputed$firm_size.large>0.5, "large", ifelse(missimputed$firm_size.medium>0.5, "medium", "small")) #similar to poverty criteria
 
 
 #Creating the final database for using in our models
@@ -228,7 +233,9 @@ eap.data.no <- mutate(eap.data.no, new_edcu=missimputed$new_educ, new_poverty = 
 #the economically active indicator, incomplete education, firm size and poverty, and missing values indicators)
 
 finalbase <- eap.data.no[-c(6 ,9, 13, 14, 16:18)]
-#View(finalbase)
+finalbase$new_poverty <- as.factor(finalbase$new_poverty)
+finalbase$new_firmsize <- as.factor(finalbase$new_firmsize)
+View(finalbase)
 
 #Split data into training and testing sets
 
@@ -242,7 +249,7 @@ prop.table(table(finalbase$formality)) #We have 79% of informal workers on the f
 set.seed(1983)
 test_index <- createDataPartition(finalbase$formality, times = 1, p = 0.2, list = FALSE)
 
-test_set <- finalbase[test_index, ]
+test_set <- finalbase[test_index, ] #please ignore this annoying red warning message!
 train_set <- finalbase[-test_index, ]
 
 #saveRDS(test_set, file = "test_set.Rds")
@@ -303,10 +310,6 @@ best_rpart <- train(formality ~ .,
 rpart_hat_best <- predict(best_rpart, test_set)
 
 confusionMatrix(rpart_hat_best, test_set$formality)$overall["Accuracy"]
-
-# classification tree plot
-plot(best_rpart, margin = 0.1)
-text(best_rpart, cex = 0.25)
 
 
 # 3. LAST MODEL: RANDOM FOREST

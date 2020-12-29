@@ -74,6 +74,16 @@ The rest of the document is structured in the following way, an Analysis section
 
 # Analysis
 
+Figure 1 shows some of the demographic and labor characteristics of Bolivian workers that would be accompanied by high levels of labor informality. For example, we observe that very high levels of informality[^1] among workers who do not receive remuneration, those who work in agricultural activities in rural areas, or those self-employed workers who work in small companies (with less than 5 workers), are also accompanied by high levels of informality among workers in commerce, construction or transportation, as well as those who identify themselves as indigenous.
+
+[^1]: A worker is considered to be informal if he or she does not make social security contributions or is not affiliated with a Pension Fund Administrator, in other words, informality is approached through those workers who do not contribute for their retirement.
+
+![Percentage of informal workers according to different criteria](Plots/Rplot1.png "Percentage of informal workers according to different criteria")
+
+Figure 2 we can see other characteristics of numerical variables (hours worked per week, monthly labor income and length of time in the job), in which we see that informal workers tend to work on average almost 1.5 hours more per week than formal workers, earning approximately \$305 per month, or only 48% of what a formal employee earns, and finally, we see that informal workers have stayed on average 1 year longer in their current job when compared to formal workers, which may show less labor dynamism in this sector.
+
+![Wage differences, seniority and hours worked between formal and informal workers](Plots/Rplot2.png "Wage differences, seniority and hours worked between formal and informal workers")
+
 ## Data wrangling & descriptive elements
 
 For this project I take 15 demographic and labor market variables from the Bolivian Household Survey for 2018. These 15 variables have been selected taking into account that they can be good predictors of labor informality observed in the country. Among the selected demographic variables are: 1. the zone (urban or rural), 2. gender (male or female), 3. age, 4. race (whether the interviewee is considered indigenous or not), 5. number of household members, 6. interviewee's years of education and 7. If the interviewee is considered poor according to the household income criteria.
@@ -92,9 +102,9 @@ In a next stage we look for extreme values in the variables so that once identif
 
 **Outliers.** We also identified extreme values in four of the numerical variables in our database (age, hours of work, labor income and seniority), on the other hand, we did not find evidence of outliers in the variable years of education. The total of extreme values found is 2,878, these observations were filtered from the database to avoid potential biases in the subsequent projections.
 
-**Missing values.** Once the outliers were eliminated, we concentrated on working with the missing values, identifying the absence of 562 data in 3 variables of our base: size of the companies, years of education and poverty. For this project I decided to impute the missing values using the BagImpute function of the Caret package[^1] instead of eliminating the observations with missing data, this for two reasons, the first to practice with the use of this important data imputation tool and the second, to not continue losing data, since with the cleaning of outliers I lost almost 3,000 observations.
+**Missing values.** Once the outliers were eliminated, we concentrated on working with the missing values, identifying the absence of 562 data in 3 variables of our base: size of the companies, years of education and poverty. For this project I decided to impute the missing values using the BagImpute function of the Caret package[^2] instead of eliminating the observations with missing data, this for two reasons, the first to practice with the use of this important data imputation tool and the second, to not continue losing data, since with the cleaning of outliers I lost almost 3,000 observations.
 
-[^1]: This method of recovering missing values uses bagging of regression trees. It provides the recovery of missing values for several variables at once, based on regression dependencies. For more information you can consult the Help repository for Pre-Processing of Predictor on the Caret package.
+[^2]: This method of recovering missing values uses bagging of regression trees. It provides the recovery of missing values for several variables at once, based on regression dependencies. For more information you can consult the Help repository for Pre-Processing of Predictor on the Caret package.
 
 The first step for the imputation of the missing values was to convert the character variables into factors, and then to be able to convert all the variables into dummies, this because the BagImpute function only allows to make imputations for numerical variables. Once the imputation was done, the only thing left to do was to work a little with the new predicted variables (education, firm size and poverty) to return them to the original values of the initial base and thus begin with the construction of the forecast models for labor informality.
 
@@ -110,23 +120,47 @@ prop.table(table(train_set$formality))
 prop.table(table(test_set$formality))
 ```
 
+With databases properly sorted, cleaned and partitioned, we are ready to begin our model analysis to forecast labor informality in Bolivia.
+
 ## Data modeling approaches
 
-describing data
+Since our variable of interest for our models is labor informality, a dichotomous variable (0, 1), it is appropriate to choose methodologies suitable for this type of variable. In this sense, one of the best known methodologies in conventional econometrics for dealing with dichotomous dependent variables is that of logistic regression, with which I will begin my analysis. Later, I will advance with new methodologies learned in the different modules of the course, taking advantage of the greater computational power of methodologies such as classification trees, and I will finish with the approach of a random forest.
 
-![Percentage of informal workers according to different criteria](Plots/Rplot1.png "Percentage of informal workers according to different criteria")
-
-Figure 1 shows some of the demographic and labor characteristics of Bolivian workers that would be accompanied by high levels of labor informality. For example, we observe that very high levels of informality among workers who do not receive remuneration, those who work in agricultural activities in rural areas, or those self-employed workers who work in small companies (with less than 5 workers), are also accompanied by high levels of informality among workers in commerce, construction or transportation, as well as those who identify themselves as indigenous.
-
-Plot 2
-
-![Wage differences, seniority and hours worked between formal and informal workers](Plots/Rplot2.png "Wage differences, seniority and hours worked between formal and informal workers")
+For each model, I will use as dependent variable labor formality and as explanatory variables the rest of 13 demographic and labor market variables mentioned previously: 1. zone, 2. gender, 3. age, 4. race, 5. \# family members, 6. labor category, 7. labor branch, 8. working hours, 9. labor income, 10. job tenure, 11. firm size, 12. years of education and 13. poverty.
 
 ### Logistic regression
 
+Logistic regression or logit is one of the traditional econometric techniques for modeling binary variables and seems a good starting point for analyzing the factors that explain labor informality in Bolivia. The logit specification traditionally follows this structure:
+
+$$
+Pr(Y=1 \mid X=x)
+$$
+
+In this case, we define outcome variable $Y$ as 1 for formal workers and 0 otherwise, and $X$ as a matrix of our reminding 13 explanatory variables. This methodology must be slightly adjusted at the time of making the forecasts, since they are not produced in a dichotomous way (0 or 1) but as continuous values that are between these limits, so they must be slightly corrected so that forecasts greater than 0.5 are equal to 1 and those less than 0.5 equal to 0.
+
+The R command used for estimating this first approach is:
+
+```{r Logistic Regression, echo=T, results='hide'}
+glm_model <-  glm(formality ~ ., data= train_set, family = "binomial")
+```
+
+We will see the accuracy and the main variables coefficients (size and significance) in more detail in the Results section.
+
 ### Classification trees
 
+explicacion sobre estos modelos
+
+explicar control y calibracion de parametros
+
+y comando de modelo
+
 ### Random forest
+
+explicacion sobre estos modelos
+
+explicar control y calibracion de parametros
+
+y comando de modelo
 
 # Results
 
@@ -168,6 +202,8 @@ Table of model results (accuracy)
 # Conclusion
 
 Brief summary of the report, its potential impact, its limitations, and future work.
+
+Los tres modelos tienen buena precisión de pronóstico y en los tres casos vemos que las 3 principales variables que estarían explicando la informalidad laboral son el tamaño de la empresa, el ingreso laboral y la categoria laboral.
 
 -   5 points for 3 files
 
