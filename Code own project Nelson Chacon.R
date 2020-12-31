@@ -29,6 +29,11 @@ urlfile="https://raw.githubusercontent.com/nelchacon/My_project_edx/main/hs_2018
 mydata<-read_csv(url(urlfile))
 View(mydata)
 
+
+#We set the seed in order to have the same results when replicating
+
+set.seed(2020)
+
 # Wrangling and descriptive analysis
 
 summary(mydata)
@@ -229,7 +234,6 @@ prop.table(table(finalbase$formality)) #We have 79% of informal workers on the f
 
 #Lets round it to 80% of informal and 20% of formal workers on the new splits
 
-set.seed(1983)
 test_index <- createDataPartition(finalbase$formality, times = 1, p = 0.2, list = FALSE)
 
 test_set <- finalbase[test_index, ] #please ignore this annoying red warning message!
@@ -296,7 +300,6 @@ confusionMatrix(rpart_hat_best, test_set$formality)
 rfcontrol <- trainControl(method="cv", number = 10)
 rfgrid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 
-set.seed(2001)
 rf <- randomForest(formality ~ .,
                    data = train_set,
                    trControl = rfcontrol,
@@ -325,7 +328,7 @@ rf$mtry
 
 
 #Best random forest model tuned
-set.seed(2001)
+
 rf_best <- randomForest(formality ~ .,
                         data = train_set,
                         trControl = rfcontrol,
