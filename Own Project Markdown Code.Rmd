@@ -210,7 +210,7 @@ In addition, this methodology offers a very valuable graphic element to perform 
 
 In this tree we can see that the first variable to make the classification between formal and informal workers is the small size of the company, in a next level we see that the labor income variable plays an important role, as well as the years of education of the people, or working in sectors like construction and the years of seniority in the job. This graph is of great help to better understand the results of the model and the main elements that would be behind the classification.
 
-Finally, we have the results of the random forest, using this methodology we obtain an overall accuracy of 0.9189, a sensitivity of 0.9658 and a specificity of 0.7393, with a balanced accuracy of 0.8526, being this by little the best of the three models in terms of forecasting accuracy.
+Finally, we have the results of the random forest, using this methodology we obtain an overall accuracy of 0.9210, a sensitivity of 0.9649 and a specificity of 0.7525, with a balanced accuracy of 0.8587, being this by little the best of the three models in terms of forecasting accuracy.
 
 As mentioned previously, the main disadvantage of this technique is that it loses the interpretability of the results by having forests instead of trees and not being able, for example, to make the graphical representation of the results as we did with the decision trees. However, the random forest methodology offers us an attractive alternative, that of being able to identify the main variables behind the model:
 
@@ -222,15 +222,15 @@ According to these results (Figure 5), we observe that the 4 main variables that
 
 This project focused on building models to classify workers into formal and informal labor categories using data from the Bolivian Household Survey for 2018. Three different approaches were constructed using logistic regression, classification tree and random forest, obtaining the following results:
 
-+-------------------------+-------------------------------+---------------------------+-----------------------------------------------------+
-| Model                   | Overall and balanced accuracy | Sensitivity & specificity | Main variables                                      |
-+=========================+===============================+===========================+=====================================================+
-| 1.  Logistic regression | 0.9135 / 0.8528               | 0.9564 / 0.7492           | firm size, labor category and labor branch          |
-+-------------------------+-------------------------------+---------------------------+-----------------------------------------------------+
-| 2.  Classification tree | 0.9115 / 0.8363               | 0.9645 / 0.7082           | firm size, labor income, education and labor branch |
-+-------------------------+-------------------------------+---------------------------+-----------------------------------------------------+
-| 3.  Random forest       | 0.9210 / 0.8551               | 0.9675 / 0.7426           | firm size, labor income, education and labor branch |
-+-------------------------+-------------------------------+---------------------------+-----------------------------------------------------+
++---------------------+-------------------------------+---------------------------+-----------------------------------------------------+
+| Model               | Overall and balanced accuracy | Sensitivity & specificity | Main variables                                      |
++=====================+===============================+===========================+=====================================================+
+| Logistic regression | 0.9135 / 0.8528               | 0.9564 / 0.7492           | firm size, labor category and labor branch          |
++---------------------+-------------------------------+---------------------------+-----------------------------------------------------+
+| Classification tree | 0.9115 / 0.8363               | 0.9645 / 0.7082           | firm size, labor income, education and labor branch |
++---------------------+-------------------------------+---------------------------+-----------------------------------------------------+
+| Random forest       | 0.9210 / 0.8587               | 0.9649 / 0.7525           | firm size, labor income, education and labor branch |
++---------------------+-------------------------------+---------------------------+-----------------------------------------------------+
 
 : Summary of the main findings on each model
 
@@ -240,6 +240,6 @@ It should be noted that the results in terms of precision in the three models ar
 
 **Next steps.** [@morales2015impact] point out that "for many authors informality is non-voluntary because it is associated with the impossibility of accessing to formal work due to their scarcity and mostly because many workers do not have enough skills to work in the formal sector. However, house survey-based studies showed that many workers are in the informal sector by their own decision and are satisfied of their situation". In this sense, and as a next step I would like to distinguish informal workers between those who have voluntarily chosen to be part of this sector and those who are informal out of necessity, in order to make this distinction it will be key to separate each sector using the labor income, expecting that the voluntary informals earn much more money than the informals out of necessity, another group of variables that could also help to make this distinction could be: the characteristics of the housing, the assets people possess or the degree of education of the workers. In this way, more appropriate policies could be designed to advance in the labor formalization of these people; it is very likely that the measures required to formalize some of them are not necessarily the same as those leading to the formalization of the others.
 
-I would like to take this opportunity to thank the course colleagues who will be reviewing this work. Likewise, I would like to thank the team of the Harvard Data Science Course for all their work this year and for the many months of dedication to the program that have allowed me to grow in knowledge and skills. It has been a very productive journey, thank you very much!
+I would like to take this opportunity to thank the course colleagues who will be reviewing this work. Likewise, I want to thank the team of the Harvard Data Science Course for all their work, this year and few months of dedication to the program have allowed me to grow both in knowledge and skills. It has been a very productive journey, thank you very much to All!
 
 # References
