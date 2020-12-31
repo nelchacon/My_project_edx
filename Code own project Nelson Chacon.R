@@ -6,34 +6,19 @@
 #If you are an Ubuntu user, consider there is some trouble installing tidyverse on Rstudio
 # you should first run this command on linux terminal: sudo apt-get install -y libxml2-dev libcur14-openssl-dev libssl-dev
 
-#if(!require(foreign)) install.packages("foreign", repos = "http://cran.us.r-project.org")
+
 if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
-#if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
-#if(!require(lubridate)) install.packages("lubridate", repos = "http://cran.us.r-project.org")
 if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-#if(!require(gt)) install.packages("gt", repos = "http://cran.us.r-project.org")
-#if(!require(scales)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-#if(!require(repmis)) install.packages("repmis", repos = "http://cran.us.r-project.org")
-#if(!require(readr)) install.packages("readr", repos = "http://cran.us.r-project.org")
 if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
-#if(!require(Rborist)) install.packages("Rborist", repos = "http://cran.us.r-project.org")
 if(!require(randomForest)) install.packages("randomForest", repos = "http://cran.us.r-project.org")
 if(!require(e1071)) install.packages("e1071", repos = "http://cran.us.r-project.org")
 
 #Load libraries we will use
 library(tidyverse)
 library(caret)
-#library(data.table)
-#library(lubridate)
 library(ggplot2)
-#library(gt)
-#library(foreign)
-#library(scales)
-#library(repmis)
-#library (readr)
 library(rpart)
-#library(Rborist)
 library(randomForest)
 library(e1071)
 
@@ -102,7 +87,7 @@ characteristics <- c("rural","indigenous","self-employed","unpaid","agriculture"
 values <- c(92,87,96,99,98,91,92,91,95,95)
 graph1 <- data.frame(characteristics, values)
 
-#Plot 1: informality labour according to different economic characteristics (factors)
+#Plot 1: informality labor according to different economic characteristics (factors)
 
   ggplot(data=graph1, aes(x=reorder(characteristics, values), y= values)) +
   geom_bar(position = "dodge", stat="identity")+
@@ -136,7 +121,6 @@ graph1 <- data.frame(characteristics, values)
 table(mydata$eapop) #We have 17659 EAP in our sample
 
 eap.data <- filter(mydata, eapop==1)
-#View(eap.data)
 
 #Cleaning outliers
 
@@ -191,7 +175,6 @@ eap.data.no$missPov <- ifelse(is.na(eap.data.no$poverty), "Y", "N")
 #, dependent variable of formality, and missing value indicators)
 
 forimputation <- select(eap.data.no, -6, -10, -16:-18)
-#View(forimputation)
 str(forimputation)
 
 #transforming all variables to dummies
@@ -210,7 +193,7 @@ View(imputed.data)
 
 imputed.data <- as.data.frame(imputed.data)
 missimputed <- select(imputed.data, 22:24, 27:29)
-#View(missimputed)
+
 
 # recomputing the predicted missing values before including in data base
 
@@ -227,7 +210,7 @@ missimputed$new_firmsize <- ifelse(missimputed$firm_size.large>0.5, "large", ife
 #adding the new imputed variables to the database with no outliers
 
 eap.data.no <- mutate(eap.data.no, new_edcu=missimputed$new_educ, new_poverty = missimputed$new_poverty, new_firmsize=missimputed$new_firmsize)
-#View(eap.data.no)
+
 
 #we exclude all the variables that wont be used in our model
 #the economically active indicator, incomplete education, firm size and poverty, and missing values indicators)
@@ -239,7 +222,7 @@ View(finalbase)
 
 #Split data into training and testing sets
 
-#The idea is to have representative subsamples of the interest variable Formality both
+#The idea is to have representative sub-samples of the interest variable Formality both
 #on training and testing sets
 
 prop.table(table(finalbase$formality)) #We have 79% of informal workers on the final database
@@ -252,9 +235,6 @@ test_index <- createDataPartition(finalbase$formality, times = 1, p = 0.2, list 
 test_set <- finalbase[test_index, ] #please ignore this annoying red warning message!
 train_set <- finalbase[-test_index, ]
 
-#saveRDS(test_set, file = "test_set.Rds")
-#saveRDS(train_set, file = "train_set.Rds")
-
 #checking that training and testing sets maintain the balance of 80% of informal workers
 
 prop.table(table(train_set$formality))  #they are ok, around 80% informality
@@ -264,7 +244,7 @@ prop.table(table(test_set$formality))  #ok too, near 80% of informality
 ###MODELING LABOR INFORMALITY
 ###############################
 
-# 1. FISRT MODEL: NAIVE LOGISTIC REGRESSION
+# 1. FISRT MODEL: LOGISTIC REGRESSION
 
 glm_model <-  glm(formality ~ ., data= train_set, family = "binomial") #model
 
@@ -277,9 +257,7 @@ summary(glm_model)  # see the results of the model
 
 # 2. SECOND MODEL: CLASSIFICATION TREE
 
-#Define control and grid for optimization and tuning parameters 
-#control <- trainControl(method="cv", number = 10)
-#grid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
+#We include 10 fold cross-validation and a grid for tuning the complexity parameter
 
 train_rpart <- train(formality ~ .,
                      method = "rpart",
@@ -318,7 +296,7 @@ confusionMatrix(rpart_hat_best, test_set$formality)
 rfcontrol <- trainControl(method="cv", number = 10)
 rfgrid <- data.frame(mtry = c(1, 5, 10, 25, 50, 100))
 
-
+set.seed(2001)
 rf <- randomForest(formality ~ .,
                    data = train_set,
                    trControl = rfcontrol,
@@ -334,10 +312,10 @@ rf_predict <- factor(rf_predict)
 
 confusionMatrix(data = rf_predict, reference=factor(test_set$formality))
 
-plot(rf)
+plot(rf) 
 
 imp <- importance(rf)
-imp
+imp # we see the Importance Variables
 
 varImpPlot(rf)
 
@@ -347,7 +325,7 @@ rf$mtry
 
 
 #Best random forest model tuned
-
+set.seed(2001)
 rf_best <- randomForest(formality ~ .,
                         data = train_set,
                         trControl = rfcontrol,
